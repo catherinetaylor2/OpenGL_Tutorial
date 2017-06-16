@@ -11,6 +11,59 @@
 #include "BITMAP.hpp"
 #include <glm/gtx/transform.hpp>
 
+glm::vec3 position = glm::vec3(0,0,5);
+float horizontalAngle = 3.14f;
+float verticalAngle = 0.0f;
+float FoV = 45.0f;
+float speed= 3.0f;
+float mouseSpeed = 0.0005f;
+float lastTime =glfwGetTime();
+
+glm::mat4 projectionMatrix = glm::perspective(
+    glm::radians (45.0f),         //FOV
+    (float)1080/(float)720, // Aspect Ratio. 
+    0.1f,        // Near clipping plane. 
+    100.0f       // Far clipping plane.
+);
+glm::mat4 ViewMatrix =  glm::lookAt(
+    glm::vec3(4,3,3), // position of camera
+    glm::vec3(0,0,0),  // look at vector
+    glm::vec3(0,1,0)  //look up vector
+);
+
+void computeMatricesFromInputs(GLFWwindow *window){
+    double xpos, ypos;
+    glfwGetCursorPos(window,&xpos, &ypos);
+    double currentTime = glfwGetTime();
+    float deltaTime = float(currentTime - lastTime);
+    horizontalAngle += mouseSpeed*deltaTime  * float(1024/2 - xpos );
+    verticalAngle   += mouseSpeed*deltaTime  * float( 768/2 - ypos );
+    lastTime=currentTime;
+    glm::vec3 direction(
+        cos(verticalAngle) * sin(horizontalAngle),
+        sin(verticalAngle),
+        cos(verticalAngle) * cos(horizontalAngle)
+    );
+    glm::vec3 right = glm::vec3(
+        sin(horizontalAngle - 3.14f/2.0f),
+        0,
+        cos(horizontalAngle - 3.14f/2.0f)
+    );
+    glm::vec3 up = glm::cross( right, direction );
+    projectionMatrix = glm::perspective(FoV, 4.0f / 3.0f, 0.1f, 100.0f);
+    ViewMatrix       = glm::lookAt(
+        position,           // Camera is here
+        position+direction, // and looks here : at the same position, plus "direction"
+        up                  // Head is up (set to 0,-1,0 to look upside-down)
+    );
+};
+glm::mat4 getProjectionMatrix(){
+    return projectionMatrix;
+}
+glm::mat4 getViewMatrix(){
+    return ViewMatrix;
+}
+
 int main(){
 
     unsigned char * texture_data;
@@ -43,19 +96,19 @@ int main(){
         return -1;
     }
     //MVP MATRICES:
-    glm::mat4 projectionMatrix = glm::perspective(
-        glm::radians (45.0f),         //FOV
-        (float)width/(float)height, // Aspect Ratio. 
-        0.1f,        // Near clipping plane. 
-        100.0f       // Far clipping plane.
-    );
-    glm::mat4 ViewMatrix =  glm::lookAt(
-        glm::vec3(4,3,3), // position of camera
-        glm::vec3(0,0,0),  // look at vector
-        glm::vec3(0,1,0)  //look up vector
-    );
-    glm::mat4 ModelMatrix = glm::mat4(1.0f);
-    glm::mat4 MVP = projectionMatrix*ViewMatrix*ModelMatrix;
+    // glm::mat4 projectionMatrix = glm::perspective(
+    //     glm::radians (45.0f),         //FOV
+    //     (float)width/(float)height, // Aspect Ratio. 
+    //     0.1f,        // Near clipping plane. 
+    //     100.0f       // Far clipping plane.
+    // );
+    // glm::mat4 ViewMatrix =  glm::lookAt(
+    //     glm::vec3(4,3,3), // position of camera
+    //     glm::vec3(0,0,0),  // look at vector
+    //     glm::vec3(0,1,0)  //look up vector
+    // );
+    // glm::mat4 ModelMatrix = glm::mat4(1.0f);
+    // glm::mat4 MVP = projectionMatrix*ViewMatrix*ModelMatrix;
 
    
     GLuint textureID;
@@ -162,6 +215,12 @@ int main(){
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
     do{
+        computeMatricesFromInputs(window);
+        glm::mat4 projectionMatrix = getProjectionMatrix();
+        glm::mat4 ViewMatrix =  getViewMatrix();
+        glm::mat4 ModelMatrix = glm::mat4(1.0f);
+        glm::mat4 MVP = projectionMatrix*ViewMatrix*ModelMatrix;
+
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         glUseProgram(programID);
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
