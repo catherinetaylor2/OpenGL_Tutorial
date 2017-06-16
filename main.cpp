@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <vector>
 #include "shader.hpp"
+#include <glm/gtx/transform.hpp>
 
 int main(){
 
@@ -23,7 +24,8 @@ int main(){
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow *window;
-    window = glfwCreateWindow(1024, 768, "Tutorial 01", NULL, NULL);
+    int width =1080, height = 720;
+    window = glfwCreateWindow(width, height, "Tutorial 01", NULL, NULL);
     if(window==NULL){
         std::cout<<"Error: failed to open window";
         glfwTerminate();
@@ -35,6 +37,22 @@ int main(){
         std::cout<<"Error: failed to initialize GLEW \n";
         return -1;
     }
+    //MVP MATRICES:
+    glm::mat4 projectionMatrix = glm::perspective(
+        glm::radians (45.0f),         //FOV
+        (float)width/(float)height, // Aspect Ratio. 
+        0.1f,        // Near clipping plane. 
+        100.0f       // Far clipping plane.
+    );
+    glm::mat4 ViewMatrix =  glm::lookAt(
+        glm::vec3(4,3,3), // position of camera
+        glm::vec3(0,0,0),  // look at vector
+        glm::vec3(0,1,0)  //look up vector
+    );
+    glm::mat4 ModelMatrix = glm::mat4(1.0f);
+    glm::mat4 MVP = projectionMatrix*ViewMatrix*ModelMatrix;
+
+   
 
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
@@ -53,10 +71,12 @@ int main(){
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
     GLuint programID = LoadShaders("VertexShader.vertexshader", "FragmentShader.fragmentshader");
+    GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
     do{
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         glUseProgram(programID);
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
