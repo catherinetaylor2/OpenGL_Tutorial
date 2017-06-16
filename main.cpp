@@ -7,6 +7,7 @@
 #include <string>
 #include <cstdio>
 #include <vector>
+#include "shader.hpp"
 
 int main(){
 
@@ -51,7 +52,12 @@ int main(){
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
+    GLuint programID = LoadShaders("VertexShader.vertexshader", "FragmentShader.fragmentshader");
+
     do{
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+        glUseProgram(programID);
+
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         glVertexAttribPointer(
