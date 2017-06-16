@@ -70,6 +70,14 @@ int main(){
 	int texture_width, texture_height;
 	texture_data = readBMP("texture.bmp", &texture_width, &texture_height);
 
+    float *V, *N, *VT;
+    int F, *FV, *FN, *FT;
+    ObjFile mesh("cube.obj");
+	mesh.get_mesh_data(mesh, &FV, &FN, &FT, &VT, &N, &V, &F);
+	std::cout<<"tree built \n";
+     int number_of_faces = mesh.get_number_of_faces();
+    int number_of_vertices = mesh.get_number_of_vertices();
+
     if(!glfwInit()){ // initialize GLFW
         std::cout<<"Error: failed to initialize GLFW \n";
         return -1;
@@ -95,21 +103,6 @@ int main(){
         std::cout<<"Error: failed to initialize GLEW \n";
         return -1;
     }
-    //MVP MATRICES:
-    // glm::mat4 projectionMatrix = glm::perspective(
-    //     glm::radians (45.0f),         //FOV
-    //     (float)width/(float)height, // Aspect Ratio. 
-    //     0.1f,        // Near clipping plane. 
-    //     100.0f       // Far clipping plane.
-    // );
-    // glm::mat4 ViewMatrix =  glm::lookAt(
-    //     glm::vec3(4,3,3), // position of camera
-    //     glm::vec3(0,0,0),  // look at vector
-    //     glm::vec3(0,1,0)  //look up vector
-    // );
-    // glm::mat4 ModelMatrix = glm::mat4(1.0f);
-    // glm::mat4 MVP = projectionMatrix*ViewMatrix*ModelMatrix;
-
    
     GLuint textureID;
     glGenTextures(1, &textureID);
@@ -166,7 +159,7 @@ int main(){
     GLuint vertexbuffer;
     glGenBuffers(1, &vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 3*number_of_vertices*sizeof(float),  &V[0], GL_DYNAMIC_DRAW);
 
    static const GLfloat g_uv_buffer_data[] = {
     0.000059f, 1.0f-0.000004f,
@@ -258,6 +251,7 @@ int main(){
     while(glfwGetKey(window, GLFW_KEY_ESCAPE)!=GLFW_PRESS && glfwWindowShouldClose(window)==0);
 
     delete [] texture_data;
+    ObjFile::clean_up(V,N, VT, FV, FN, FT);
     glDeleteVertexArrays(1, &VertexArrayID);
     glDeleteBuffers(1, &vertexbuffer);
     glDeleteBuffers(1, &colorbuffer);
